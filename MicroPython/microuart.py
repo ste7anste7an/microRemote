@@ -1,3 +1,5 @@
+import __main__
+
 
 from pybricks.parameters import Port
 from pybricks.robotics import DriveBase
@@ -11,16 +13,20 @@ from pybricks.iodevices import UARTDevice
 PREAMBLE = b'<$MU'
 
 class MicroUART:
-    def __init__(self,port,baudrate=115200,wait_recv=10000,uart_timeout=1000):
-        self.byte_timeout = 100
+    def __init__(self,port,baudrate=115200,wait_recv=1000,uart_timeout=1000):
+        self.byte_timeout = 10
         self.wait_recv = wait_recv
         self.uart = UARTDevice(port,timeout=uart_timeout)
         self.uart.set_baudrate(baudrate)
+    
+    def flush(self):
+        while self.uart.waiting()>0:
+            self.uart.read_all()
 
     def send_bytes(self,b):
         b=PREAMBLE+b
         b=bytes([len(b)])+b
-        print(b)
+        #rint(b)
         self.uart.write(b)
 
     def receive_bytes(self):
@@ -30,9 +36,9 @@ class MicroUART:
         if self.uart.waiting() > 0:
             l=self.uart.read(1)[0]
         else:
-            self.uart.read_all()
-            return 1,None
-        print(l,"u.waiting",self.uart.waiting())
+            self.flush()
+            return b'' #1,None
+        #print(l,"u.waiting",self.uart.waiting())
         # if start reading all is fatsre than sending the bytes,
             # we will miss sime bytes.
             # therefore collect bytes during a time window
@@ -44,7 +50,8 @@ class MicroUART:
 
             # overall timeout
             if total_sw.time() > self.wait_recv:
-                return 2, None     # total timeout
+                self.flush()
+                return b'' #2, None     # total timeout
 
             if self.uart.waiting():
                 b = self.uart.read(1)
@@ -52,14 +59,15 @@ class MicroUART:
                     payload.append(b[0])
                     if i<4:
                         if b[0]!=PREAMBLE[i]:
-                            self.uart.read_all()
-                            return 4, None
+                            self.flush()
+                            return b'' #4, None
                     i+=1
                     byte_sw.reset()
             else:
                 # inter-byte timeout
                 if byte_sw.time() > self.byte_timeout:
-                    return 3, None
+                    self.flush()
+                    return b'' #3, None
                 pass
 
         return bytes(payload[4:])
@@ -108,43 +116,36 @@ class MicroUART:
 
     def send_command(self,cmd,*data):
         b=self.encode(cmd,*data)
-        print('b encoded',b)
+        #print('b encoded',b)
         self.send_bytes(b)
         
     def receive_command(self):
         b=self.receive_bytes()
-        if b!=None and b!=1 and b!=2 and len(b)>0:
-            cmd,data=self.decode(b)
-            return cmd,data
+        #print('recv serial',b)
+        if len(b)>0:
+            try:
+                cmd,data=self.decode(b)
+                return cmd,data
+            except:
+                self.flush()
+                return "!ERROR","no bytes received"
         else:
             return "!ERROR","no bytes received"
 
 
 
     def call(self,cmd,*data):
-        self.send_command(cmd,data)
+        self.send_command(cmd,*data)
+        self.flush()
         return self.receive_command()
 
-
-uu=MicroUART(Port.S2)
-print(uu.decode(uu.encode('cmd',2124,b'1234','hallo',True,5)))
-
-# i=0
-# s=b'\x40'+bytearray([i+65 for i in range(0x40)])
-# while True:
-#     send_str(i)
-#     print(i)
-#     i+=1
-#     i%=32
-#     wait(100)
-
-#uu.send_command('test',123,12)
-i=0
-while True:
-    uu.send_command('test',i,i+2)
-    #cmd,data=uu.receive_command()
-    #print(cmd,data)
-    wait(50)
-    i+=1
-    if i> 255:
-        i=0
+    def process(self):
+        cmd, data = self.receive_command()
+        if cmd != '!ERROR':
+            if cmd in dir(__main__):
+                funct = eval(cmd)
+                resp = funct(*data)
+                self.send_command(cmd+'_ack',*resp)
+        else:
+            self.send_command(cmd+'_err','recv error')
+        
