@@ -1,3 +1,29 @@
+module main
+author unknown
+version 1 0 
+description ''
+
+  spec 'r' 'joy' 'joy'
+
+to joy {
+  local 'bytes' ('[data:newByteArray]' 3)
+  '[sensors:i2cRead]' (hexToInt '52') bytes
+  return ('[data:makeList]' (at 1 bytes) (at 2 bytes) (at 3 bytes))
+}
+
+script 199 76 {
+whenStarted
+init
+forever {
+  process
+}
+}
+
+script 40 229 {
+to joy {}
+}
+
+
 module microuart
 author Ste7an
 version 1 0 

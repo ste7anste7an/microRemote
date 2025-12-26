@@ -3,7 +3,6 @@ author Ste7an
 version 1 0 
 description 'Communication library with MicroBlocks using the hubs
 UARTDevice.'
-variables time 
 
   spec 'r' '_encode' 'encode _ data _' 'auto auto' 10 '10'
   spec 'r' '_read serial' 'read serial'
@@ -11,9 +10,6 @@ variables time
   spec 'r' 'call' 'call _ data _' 'auto auto' '10' '10'
   spec 'r' '_receive command' 'receive command'
   spec ' ' '_send command' 'send command _ data _' 'auto auto' '10' '10'
-  spec ' ' 'process' 'process'
-  spec ' ' 'flush' 'flush'
-  spec ' ' 'init' 'init'
 
 to '_decode' encoded {
   local 'tot_len' (size encoded)
@@ -87,8 +83,6 @@ to '_encode' cmd list {
 }
 
 to '_read serial' {
-  local 'byte' 0
-  local 'PREAMBLE' ('[data:asByteArray]' '<$MU')
   local 'start_time' (millisOp)
   local 'tot_len' 0
   waitUntil (or (((millisOp) - start_time) > 1000) (('[serial:available]') > 0))
@@ -98,7 +92,7 @@ to '_read serial' {
     local 'tmp' ('[serial:read]')
     return ('[data:newByteArray]' 0)
   }
-  local 'buf' ('[data:newByteArray]' (tot_len - 4))
+  local 'buf' ('[data:newByteArray]' tot_len)
   local 'idx' 1
   local 'frameStart' (millisOp)
   local 'byteStart' (millisOp)
@@ -108,17 +102,7 @@ to '_read serial' {
       return ('[data:newByteArray]' 0)
     }
     if (('[serial:available]') > 0) {
-      byte = (at 1 ('[serial:readNr]' 1))
-      if (idx < 5) {
-        comment 'check preamble'
-        if (byte != (at idx PREAMBLE)) {
-          sayIt idx (at idx buf) (at idx PREAMBLE)
-          local 'tmp' ('[serial:read]')
-          return ('[data:newByteArray]' 0)
-        }
-      } else {
-        atPut (idx - 4) buf byte
-      }
+      atPut idx buf (at 1 ('[serial:readNr]' 1))
       idx += 1
       byteStart = (millisOp)
     } else {
@@ -146,8 +130,7 @@ to '_send' cmd data {
 }
 
 to '_send command' cmd data {
-  local 'PREAMBLE' '<$MU'
-  local 'bytes' ('[data:join]' ('[data:asByteArray]' PREAMBLE) ('_encode' cmd data))
+  local 'bytes' ('_encode' cmd data)
   bytes = ('[data:join]' ('[data:asByteArray]' (size bytes)) bytes)
   '[serial:write]' bytes
 }
@@ -155,34 +138,5 @@ to '_send command' cmd data {
 to call cmd data {
   '_send command' cmd data
   return ('_receive command')
-}
-
-to flush {
-  local 'var' 0
-  repeatUntil (('[serial:available]') > 0) {
-    time = ('[serial:read]')
-  }
-}
-
-to init {
-  comment 'init serial port at 115200 and empty buffer'
-  '[serial:open]' 115200
-  local 'var' ('[serial:read]')
-}
-
-to process {
-  local 'cmd_data' ('_receive command')
-  if (not ((size cmd_data) == 0)) {
-    local 'cmd' (at 1 cmd_data)
-    local 'data' (at 2 cmd_data)
-    local 'return' (callCustomReporter cmd data)
-    if (isType return 'boolean') {
-      return = ('[data:makeList]')
-    } (not (isType return 'list')) {
-      return = ('[data:makeList]' return)
-    }
-    cmd = ('[data:join]' cmd '_ack')
-    '_send command' cmd return
-  }
 }
 
