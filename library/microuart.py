@@ -50,6 +50,7 @@ except:
 
 if _platform ==_PYBRICKS:
     from pybricks.iodevices import UARTDevice
+    from pybricks.parameters import Port
     from pybricks.tools import StopWatch
     # dumy pins
     RX_PIN, TX_PIN = 0,0
@@ -255,12 +256,31 @@ class MicroUART:
 
     def process(self):
         cmd, data = self.receive_command()
+        print("recv ",cmd,data)
         if cmd != "!ERROR":
             if hasattr(__main__, cmd):
                 func = getattr(__main__, cmd)
                 resp = func(*data)
                 if resp is None:
                     resp = ()
+                if not isinstance(resp,tuple):
+                    resp = {resp}
                 self.send_command(cmd + "_ack", *resp)
         else:
             self.send_command(cmd + "_err", "recv error")
+
+
+p = None
+
+def init(port):
+    global p
+    p = MicroUART(eval("Port." + port))
+    return p
+
+
+def call(command_name: str, *args):
+    return p.call(command_name, *args)
+
+
+def process():
+    p.process()
