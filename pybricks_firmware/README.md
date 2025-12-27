@@ -11,7 +11,7 @@ To flash a patched firmware onto your device, use the **Pybricks firmware update
 1. Open the Pybricks firmware updater:  
    https://code.pybricks.com
 
-2. Connect your device via USB and put it into **firmware update mode**.
+2. Select your platform and follow the instructions to put the device into **firmware update mode**.
 
 3. In the firmware update dialog, enable **Advanced options**.
 
