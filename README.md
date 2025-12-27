@@ -1,31 +1,87 @@
-# UARTRemote for MicroBlocks = MicroUART
+# UARTRemote for MicroBlocks (MicroUART)
 
-This is a stripped down version of our UARTRemote library.
+This library is a stripped-down version of the **UARTRemote** protocol, adapted for **MicroBlocks**.
+It provides a simple, reliable command-based communication protocol over UART.
 
-## Types
-The following types are supported:
-- Number
-- String
-- Boolean
-- Bytearay
+## UARTDevice
+This library deploys the Pybricks `UARTDevice` on the Lego hub side. This is an option that is not standard available in the firmwares of the Pybricks hubs. Therefore, you will find firmwares supporting `UARTDevice` in the `pybricks_firmware` directory for EV3, Prime hub and Technic hub. In the README we explain how to flash your hub using the pybricks web installer.
 
-## Protocol
+## Supported Data Types
+
+The following data types are supported:
+
+- **Number** (encoded as UTF-8 text)
+- **String** (UTF-8)
+- **Boolean**
+- **ByteArray**
+
+## Protocol Format
+
+Each UART frame has the following structure:
+
+
 
 ```
 <tot_len> <PREAMBLE> <len_cmd> <cmd> [<data_type> <data_len> <data>]
 ```
 
-with
-- tot_len: total length of frame
-- PREAMBLE: uniq preamble: '<$MU'
-- len_cmd: length of command string
-- cmd: command string
-- [ ] any number
-- data_type: one of 'N' (number), 'S' (string), 'A' (bytearray), 'B' (boolean)
-- data_len: length of data
-- data: encoded data. Numbers as strings encoded as UTF-8 , Struing encoded as UTF-8, boolean as '\x00' and '\x01' for False resp True.
+### Field Description
 
-## robust receive
-The receive function collects bytes from the UART 1 by 1 until the time_out is exceeded. Per byte it has a timeout of byte_timeout which is fixed at 10ms.
+- **total_len**  
+  Total number of bytes in the frame (including the preamble).
 
-When receiving the first 4 bytes of the frame, the PERAMBLE is checked. If there is a mistake,the UART buffer is cleared (read_all()).
+- **PREAMBLE**  
+  Fixed synchronization preamble:  
+
+```
+<$MU
+```
+
+- **cmd_len**  
+Length of the command string in bytes.
+
+- **cmd**  
+Command name encoded as UTF-8.
+
+- **[ ... ]**  
+Zero or more data fields.
+
+### Data Field Format
+
+Each data field consists of:
+
+```
+<type> <data_len> <data>
+```
+
+
+- **type**
+  - `'N'` — Number  
+  - `'S'` — String  
+  - `'A'` — ByteArray  
+  - `'B'` — Boolean  
+
+- **data_len**  
+  Length of the data payload in bytes.
+
+- **data**
+  - Number: UTF-8 encoded decimal string
+  - String: UTF-8 encoded text
+  - Boolean: `0x00` = False, `0x01` = True
+  - ByteArray: raw bytes
+
+## Robust Receive Handling
+
+Incoming UART data is read **one byte at a time** until a complete frame is received or a timeout occurs.
+
+- **Overall receive timeout:** `time_out`
+- **Inter-byte timeout:** `byte_timeout` (fixed at 10 ms)
+
+### Preamble Validation
+
+- The first 4 bytes of the frame must match the preamble `<$MU`.
+- If the preamble is invalid:
+  - The UART receive buffer is cleared (`read_all()`).
+  - The frame is discarded.
+
+This ensures reliable resynchronization even in the presence of noise, dropped bytes, or partial frames.

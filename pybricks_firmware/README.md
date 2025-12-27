@@ -1,5 +1,35 @@
 # Pybricks firmware supporting UARTDevice
 
+## Firmware and Patches
+
+Prebuilt firmware images with the required patches are provided with this project.
+
+### Flashing the Firmware
+
+To flash a patched firmware onto your device, use the **Pybricks firmware update tool**:
+
+1. Open the Pybricks firmware updater:  
+   https://code.pybricks.com
+
+2. Select your platform and follow the instructions to put the device into **firmware update mode**.
+
+3. In the firmware update dialog, enable **Advanced options**.
+
+4. Select **Use local firmware file** (or equivalent).
+
+5. Browse to and select the patched firmware file provided in this repository.
+
+6. Start the update and wait until flashing is complete.
+
+### Local Repository Requirement
+
+The firmware files are **not fetched automatically**.  
+This repository must be **cloned or downloaded locally** so the firmware file can be selected from your filesystem during the update process.
+
+Make sure you are using the firmware version that matches your device.
+
+# Firmware patches
+
 ## EV3
 
 The newest EV3 firmware already has `UARTDevice` enabled in the the latest firmware. 
