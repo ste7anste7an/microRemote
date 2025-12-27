@@ -42,7 +42,7 @@ try:
     del(platforms)
 except:
     _,_,_platform,_=sys.implementation
-    if "EV3" in _platform or "Prime" in _platform:
+    if "EV3" in _platform or "Prime" in _platform or "LEGO" in _platform:
         _platform=_PYBRICKS
     del(platforms)
 
