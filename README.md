@@ -10,7 +10,7 @@ This library deploys the Pybricks `UARTDevice` on the Lego hub side. This is an 
 
 The following data types are supported:
 
-- **Number** (encoded as UTF-8 text)
+- **Number** (32 bit integer encoded as UTF-8 text)
 - **String** (UTF-8)
 - **Boolean**
 - **ByteArray**
