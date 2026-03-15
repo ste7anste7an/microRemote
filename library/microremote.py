@@ -231,7 +231,8 @@ class MicroRemote:
                 decoded.append(bool(payload[0]))
             else:
                 raise ValueError("Unknown type code")
-
+        if len(decoded)==1:
+            decoded = decoded[0]
         return cmd, decoded
 
     # ---------- High-level API ----------
