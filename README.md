@@ -1,6 +1,6 @@
-# UARTRemote for MicroBlocks (MicroRemote)
+# uRemote for MicroBlocks (MicroRemote)
 
-This library is a stripped-down version of the **UARTRemote** protocol, adapted for **MicroBlocks**.
+This library is a stripped-down version of the **UARTRemote** protocol, adapted for **MicroBlocks**. It also works on MicroPyhton and there is a native C version for Arduino
 It provides a simple, reliable command-based communication protocol over UART.
 
 ## UARTDevice
